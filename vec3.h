@@ -40,7 +40,10 @@ public:
 	}
 	inline float length() const { return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); }
 	inline float squaredLength() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
-	inline void make_unit_vector();
+	inline vec3 unit() { 
+		float len = sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); 
+		return vec3(e[0]/len, e[1]/len, e[2]/len);
+	}
 
 	float e[3];
 };
