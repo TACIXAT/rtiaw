@@ -1,35 +1,24 @@
 #include <iostream>
 #include <stdint.h>
-#include "vec3.h"
-#include "ray.h"
+#include <cfloat>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "vec3.h"
+#include "ray.h"
+#include "hittable_list.h"
+#include "sphere.h"
 
-float hit_sphere(const vec3& center, float radius, const ray& r) {
-	vec3 oc = r.origin() - center;
-	float a = dot(r.direction(), r.direction());
-	float b = 2.0 * dot(oc, r.direction());
-	float c = dot(oc, oc) - radius*radius;
-	float discriminant = b*b - 4*a*c;
-	if(discriminant < 0) {
-		return -1.0;
-	} else {
-		return (-b - sqrt(discriminant)) / (2.0 * a);
-	}
-}
-
-vec3 color(const ray& r) {
-	float t = hit_sphere(vec3(0.0, 0.0, -1.0), 0.5, r);
-	if(t > 0.0) {
-		vec3 v_color = (r.point_at_parameter(t) - vec3(0,0,-1)).unit();
-		return 0.5*(v_color+1.0);
+vec3 color(const ray& r, hittable *world) {
+	hit_record rec;
+	if(world->hit(r, 0.0, FLT_MAX, rec)) {
+		return 0.5*(rec.normal.unit()+1.0);
 	}
 
 	vec3 unit = r.direction().unit();
 	// normalize -1 to 1 -> 0 to 2 -> 0 to 1 
-	t = 0.5*(unit.y() + 1.0);
+	float t = 0.5*(unit.y() + 1.0);
 	vec3 white = (1.0-t)*vec3(1.0, 1.0, 1.0);
-	vec3 blue = t*vec3(1.0, 0.2, 0.3);
+	vec3 blue = t*vec3(0.3, 0.4, 1.0);
 	return white+blue;
 }
 
@@ -43,6 +32,12 @@ int main() {
 	vec3 v_height(0.0, 2.0, 0.0);
 	vec3 v_width(4.0, 0.0, 0.0);
 
+	hittable *s_center = new sphere(vec3(0, 0, -1), 0.5);
+	hittable *s_big = new sphere(vec3(0, -100.5, -1), 100);
+	hittable *world = new hittable_list();
+	((hittable_list*)world)->hittables.push_back(s_center);
+	((hittable_list*)world)->hittables.push_back(s_big);
+
 	for(int i=(h-1); i>-1; --i) {
 		for(int j=0; j<w; ++j) {
 			// we start in the lower left, so (h-i-1)
@@ -53,7 +48,7 @@ int main() {
 
 			vec3 v_dir = v_lower_left + u*v_width + v*v_height;
 			ray r_curr(v_origin, v_dir);
-			vec3 v_color = color(r_curr);
+			vec3 v_color = color(r_curr, world);
 
 			data[buf_pos+0] = (uint8_t)(v_color.r()*255.99);
 			data[buf_pos+1] = (uint8_t)(v_color.g()*255.99);
