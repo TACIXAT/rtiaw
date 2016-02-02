@@ -34,11 +34,10 @@ int main() {
 	vec3 v_height(0.0, 2.0, 0.0);
 	vec3 v_width(4.0, 0.0, 0.0);
 
-	hittable *s_center = new sphere(vec3(0, 0, -1), 0.5);
-	hittable *s_big = new sphere(vec3(0, -100.5, -1), 100);
-	hittable *world = new hittable_list();
-	((hittable_list*)world)->hittables.push_back(s_center);
-	((hittable_list*)world)->hittables.push_back(s_big);
+	hittable *list[2];
+	list[0] = new sphere(vec3(0, 0, -1), 0.5);
+	list[1] = new sphere(vec3(0, -100.5, -1), 100);
+	hittable *world = new hittable_list(list, 2);
 
 	for(int i=(h-1); i>-1; --i) {
 		for(int j=0; j<w; ++j) {
