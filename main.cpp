@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdint.h>
+#include <stdlib.h>
 #include <cfloat>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -25,6 +26,7 @@ vec3 color(const ray& r, hittable *world) {
 int main() {
 	int h = 200;
 	int w = 400;
+	int ns = 100;
 	uint8_t data[w*h*3];
 
 	vec3 v_origin(0.0, 0.0, 0.0);
@@ -43,12 +45,18 @@ int main() {
 			// we start in the lower left, so (h-i-1)
 			int hflip = (h-i-1);
 			int buf_pos = 3*(hflip*w+j);
-			float u = float(j) / (w-1);
-			float v = float(i) / (h-1);
 
-			vec3 v_dir = v_lower_left + u*v_width + v*v_height;
-			ray r_curr(v_origin, v_dir);
-			vec3 v_color = color(r_curr, world);
+			vec3 v_color = vec3(0.0, 0.0, 0.0);
+			for(int s=0; s<ns; ++s) {
+				float u = float(j+drand48()) / (w-1);
+				float v = float(i+drand48()) / (h-1);
+
+				vec3 v_dir = v_lower_left + u*v_width + v*v_height;
+				ray r_curr(v_origin, v_dir);
+				v_color = v_color + color(r_curr, world);
+			}
+
+			v_color = v_color / ns;
 
 			data[buf_pos+0] = (uint8_t)(v_color.r()*255.99);
 			data[buf_pos+1] = (uint8_t)(v_color.g()*255.99);
