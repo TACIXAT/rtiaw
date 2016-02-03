@@ -39,6 +39,7 @@ public:
 		e[2] = e2;
 	}
 	inline float length() const { return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); }
+	inline vec3 get_sqrt() const { return vec3(sqrt(e[0]), sqrt(e[1]), sqrt(e[2])); }
 	inline float squaredLength() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
 	inline vec3 unit() { 
 		float len = sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); 

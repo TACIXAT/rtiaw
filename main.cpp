@@ -8,36 +8,42 @@
 #include "ray.h"
 #include "hittable_list.h"
 #include "sphere.h"
+#include "camera.h"
+
+vec3 random_in_unit_sphere() {
+	vec3 p;
+	do {
+		p = 2.0*vec3(drand48(), drand48(), drand48()) - vec3(1.0, 1.0, 1.0);
+	} while(dot(p,p) >= 1.0);
+	return p;
+}
 
 vec3 color(const ray& r, hittable *world) {
 	hit_record rec;
 	if(world->hit(r, 0.0, FLT_MAX, rec)) {
-		return 0.5*(rec.normal.unit()+1.0);
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		return 0.5*color(ray(rec.p,  target-rec.p), world);
 	}
 
 	vec3 unit = r.direction().unit();
 	// normalize -1 to 1 -> 0 to 2 -> 0 to 1 
 	float t = 0.5*(unit.y() + 1.0);
-	vec3 white = (1.0-t)*vec3(1.0, 1.0, 1.0);
-	vec3 blue = t*vec3(0.3, 0.4, 1.0);
-	return white+blue;
+	vec3 color_a = (1.0-t)*vec3(1.0, 1.0, 1.0);
+	vec3 color_b = t*vec3(0.5, 0.7, 1.0);
+	return color_a+color_b;
 }
 
 int main() {
 	int h = 200;
 	int w = 400;
-	int ns = 100;
+	int ns = 30;
 	uint8_t data[w*h*3];
-
-	vec3 v_origin(0.0, 0.0, 0.0);
-	vec3 v_lower_left(-2.0, -1.0, -1.0);
-	vec3 v_height(0.0, 2.0, 0.0);
-	vec3 v_width(4.0, 0.0, 0.0);
 
 	hittable *list[2];
 	list[0] = new sphere(vec3(0, 0, -1), 0.5);
-	list[1] = new sphere(vec3(0, -100.5, -1), 100);
+	list[1] = new sphere(vec3(0, -1, -1), 0.5);
 	hittable *world = new hittable_list(list, 2);
+	camera cam;
 
 	for(int i=(h-1); i>-1; --i) {
 		for(int j=0; j<w; ++j) {
@@ -49,14 +55,13 @@ int main() {
 			for(int s=0; s<ns; ++s) {
 				float u = float(j+drand48()) / (w-1);
 				float v = float(i+drand48()) / (h-1);
-
-				vec3 v_dir = v_lower_left + u*v_width + v*v_height;
-				ray r_curr(v_origin, v_dir);
-				v_color = v_color + color(r_curr, world);
+				ray r = cam.get_ray(u, v);
+				
+				v_color = v_color + color(r, world);
 			}
 
 			v_color = v_color / ns;
-
+			v_color = v_color.get_sqrt();
 			data[buf_pos+0] = (uint8_t)(v_color.r()*255.99);
 			data[buf_pos+1] = (uint8_t)(v_color.g()*255.99);
 			data[buf_pos+2] = (uint8_t)(v_color.b()*255.99);
