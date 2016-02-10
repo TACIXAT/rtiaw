@@ -1,2 +1,2 @@
 #!/bin/sh
-g++ main.cpp && ./a.out && display out.png
+g++ main.cpp && ./a.out && sync && display out.png

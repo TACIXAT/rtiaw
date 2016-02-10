@@ -10,39 +10,40 @@
 #include "sphere.h"
 #include "camera.h"
 
-vec3 random_in_unit_sphere() {
-	vec3 p;
-	do {
-		p = 2.0*vec3(drand48(), drand48(), drand48()) - vec3(1.0, 1.0, 1.0);
-	} while(dot(p,p) >= 1.0);
-	return p;
-}
-
-vec3 color(const ray& r, hittable *world) {
+vec3 color(const ray& r, hittable *world, int depth) {
 	hit_record rec;
-	if(world->hit(r, 0.0, FLT_MAX, rec)) {
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return 0.5*color(ray(rec.p,  target-rec.p), world);
+	if(world->hit(r, 0.001, FLT_MAX, rec)) {
+		vec3 attenuation;
+		ray scattered;
+		if(depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+			return attenuation*color(scattered, world, depth+1);
+		} else {
+			return vec3(0.0, 0.0, 0.0);
+		}
 	}
 
 	vec3 unit = r.direction().unit();
 	// normalize -1 to 1 -> 0 to 2 -> 0 to 1 
 	float t = 0.5*(unit.y() + 1.0);
 	vec3 color_a = (1.0-t)*vec3(1.0, 1.0, 1.0);
-	vec3 color_b = t*vec3(0.5, 0.7, 1.0);
+	vec3 color_b = t*vec3(0.1, 0.3, 0.7);
 	return color_a+color_b;
 }
+
+#define NUM_HITTABLE 4
 
 int main() {
 	int h = 200;
 	int w = 400;
-	int ns = 30;
+	int ns = 100;
 	uint8_t data[w*h*3];
 
-	hittable *list[2];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5);
-	list[1] = new sphere(vec3(0, -100.5, -1), 100);
-	hittable *world = new hittable_list(list, 2);
+	hittable *list[NUM_HITTABLE];
+	list[0] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.5, 0.8, 0.3)));
+	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.2, 0.3)));
+	list[2] = new sphere(vec3(1, 0, -1), 0.5, new metal(vec3(0.7, 0.9, 0.4), 0.1));
+	list[3] = new sphere(vec3(-1, 0, -1), 0.5, new metal(vec3(0.8, 0.6, 0.3), 0.7));
+	hittable *world = new hittable_list(list, NUM_HITTABLE);
 	camera cam;
 
 	for(int i=(h-1); i>-1; --i) {
@@ -57,7 +58,7 @@ int main() {
 				float v = float(i+drand48()) / (h-1);
 				ray r = cam.get_ray(u, v);
 				
-				v_color = v_color + color(r, world);
+				v_color = v_color + color(r, world, 0);
 			}
 
 			v_color = v_color / ns;
